@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Riding Journey · Admin</title>
+<style>
+:root{--paper:#f6f1e6;--cream:#fffaf0;--ink:#302d25;--muted:#756e60;--green:#66764c;--line:rgba(60,51,36,.13);--red:#a4432f}
+*{box-sizing:border-box} html,body{margin:0;min-height:100%;background:var(--paper);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Pretendard,sans-serif}
+button,input,textarea,select{font:inherit}
+.wrap{max-width:760px;margin:0 auto;padding:20px 16px 80px}
+header{display:flex;justify-content:space-between;align-items:center;padding:14px 0;border-bottom:1px solid var(--line);margin-bottom:18px}
+.brand{font:700 22px/1 Georgia,serif}.brand small{display:block;font:500 10px/1.2 sans-serif;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:4px}
+a.back{font-size:12px;color:var(--muted);text-decoration:none}
+.card{background:var(--cream);border:1px solid var(--line);border-radius:18px;padding:16px 18px;margin-bottom:16px}
+.card h3{font:700 16px/1 Georgia,serif;margin:0 0 12px}
+.field{display:flex;flex-direction:column;gap:5px;margin-bottom:10px}
+.field label{font-size:11px;color:var(--muted);font-weight:700}
+.field input,.field select,.field textarea{border:1px solid #dbd2be;background:#fff;border-radius:10px;padding:10px;outline:none;width:100%}
+.field textarea{min-height:60px;resize:vertical}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:1px solid var(--line);background:rgba(255,255,255,.7);border-radius:999px;padding:9px 15px;cursor:pointer;font-size:13px}
+.btn.primary{background:var(--green);border-color:var(--green);color:#fff}
+.btn.danger{background:var(--red);border-color:var(--red);color:#fff}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.status{font-size:12px;padding:8px 12px;border-radius:10px;margin:10px 0;display:none}
+.status.show{display:block}
+.status.ok{background:#e6ede0;color:#3f5a2c}
+.status.err{background:#f4dfd9;color:var(--red)}
+.status.info{background:#eee6d4;color:var(--muted)}
+.reclist{display:flex;flex-direction:column;gap:8px}
+.rec{border:1px solid var(--line);border-radius:12px;padding:10px 12px;background:#fff;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.rec .meta{font-size:12px;color:var(--muted)}
+.rec .title{font-weight:700;font-size:14px}
+.rec .btns{display:flex;gap:6px;flex-shrink:0}
+.rec .btns button{padding:5px 9px;font-size:12px}
+.hint{font-size:11px;color:var(--muted);margin-top:2px}
+.empty{font-size:13px;color:var(--muted);padding:16px;text-align:center}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="brand">Riding Journey<small>admin · github auto-commit</small></div>
+    <a class="back" href="index.html">← 보기 화면</a>
+  </header>
+
+  <div class="card">
+    <h3>GitHub 연결</h3>
+    <div class="row">
+      <div class="field"><label>Owner / Repo</label><input id="cfg-repo" placeholder="예: bomikim/riding-journey"></div>
+      <div class="field"><label>Branch</label><input id="cfg-branch" placeholder="main" value="main"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label>파일 경로</label><input id="cfg-path" placeholder="data.json" value="data.json"></div>
+      <div class="field"><label>Personal Access Token</label><input id="cfg-token" type="password" placeholder="ghp_..."></div>
+    </div>
+    <div class="hint">토큰은 이 브라우저의 localStorage에만 저장되고, 파일에는 절대 포함되지 않습니다. 저장소 전용 fine-grained 토큰(Contents: Read/Write)을 권장합니다. 공용 컴퓨터에서는 사용 후 "토큰 지우기"를 눌러주세요.</div>
+    <div class="actions">
+      <button class="btn primary" id="btn-save-cfg">설정 저장</button>
+      <button class="btn" id="btn-clear-token">토큰 지우기</button>
+      <button class="btn" id="btn-load">불러오기</button>
+    </div>
+    <div class="status" id="status"></div>
+  </div>
+
+  <div class="card">
+    <h3>새 기록 추가 / 수정</h3>
+    <form id="form">
+      <div class="row">
+        <div class="field"><label>날짜</label><input type="date" id="fdate" required></div>
+        <div class="field"><label>말 이름</label><input id="fhorse" required></div>
+      </div>
+      <div class="row">
+        <div class="field"><label>레슨 장소</label>
+          <select id="fplace">
+            <option>실내 원형마장</option><option>실내 넓은마장</option><option>장애물 코스</option><option>야외 마장</option><option>외승</option>
+          </select>
+        </div>
+        <div class="field"><label>날씨</label><input id="fweather"></div>
+      </div>
+      <div class="field"><label>장비 · 쉼표로 구분</label><input id="fgear"></div>
+      <div class="field"><label>오늘 배운 것</label><textarea id="flearn"></textarea></div>
+      <div class="field"><label>나아진 것</label><textarea id="fimprove"></textarea></div>
+      <div class="field"><label>고민 / 신경쓰는 것</label><textarea id="fconcern"></textarea></div>
+      <div class="actions">
+        <button type="submit" class="btn primary" id="fsubmit">추가하기</button>
+        <button type="button" class="btn" id="fcancel" style="display:none">수정 취소</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="card">
+    <h3>전체 기록 (<span id="reccount">0</span>)</h3>
+    <div class="reclist" id="reclist"><div class="empty">불러오기를 눌러 기록을 확인하세요.</div></div>
+    <div class="actions">
+      <button class="btn primary" id="btn-commit">GitHub에 커밋</button>
+    </div>
+    <div class="hint">기록을 추가/수정/삭제해도 로컬에서만 바뀝니다. "GitHub에 커밋"을 눌러야 실제 저장소의 data.json이 갱신되고, 보기 화면(index.html)에 반영돼요.</div>
+  </div>
+</div>
+
+<script>
+const $=id=>document.getElementById(id);
+let recs=[];
+let sha=null;
+let editingIndex=null;
+
+function utf8ToB64(str){return btoa(unescape(encodeURIComponent(str)))}
+function b64ToUtf8(str){return decodeURIComponent(escape(atob(str.replace(/\n/g,""))))}
+
+function loadCfg(){
+  const cfg=JSON.parse(localStorage.getItem("rj-admin-cfg")||"{}");
+  $("cfg-repo").value=cfg.repo||"";
+  $("cfg-branch").value=cfg.branch||"main";
+  $("cfg-path").value=cfg.path||"data.json";
+  $("cfg-token").value=cfg.token||"";
+}
+function saveCfg(){
+  const cfg={repo:$("cfg-repo").value.trim(),branch:$("cfg-branch").value.trim()||"main",path:$("cfg-path").value.trim()||"data.json",token:$("cfg-token").value.trim()};
+  localStorage.setItem("rj-admin-cfg",JSON.stringify(cfg));
+  return cfg;
+}
+loadCfg();
+
+function setStatus(msg,type){
+  const el=$("status");
+  el.textContent=msg;
+  el.className="status show "+(type||"info");
+}
+
+$("btn-save-cfg").onclick=()=>{saveCfg();setStatus("설정을 저장했어요.","ok")};
+$("btn-clear-token").onclick=()=>{
+  $("cfg-token").value="";
+  const cfg=saveCfg();
+  setStatus("토큰을 지웠어요.","ok");
+};
+
+function apiBase(cfg){return `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`}
+
+async function loadFromGitHub(){
+  const cfg=saveCfg();
+  if(!cfg.repo||!cfg.token){setStatus("Owner/Repo와 토큰을 먼저 입력해주세요.","err");return}
+  setStatus("불러오는 중...","info");
+  try{
+    const res=await fetch(`${apiBase(cfg)}?ref=${encodeURIComponent(cfg.branch)}`,{
+      headers:{Authorization:`token ${cfg.token}`,Accept:"application/vnd.github+json"}
+    });
+    if(!res.ok){
+      if(res.status===404){recs=[];sha=null;renderList();setStatus("data.json이 아직 없어요. 기록을 추가하고 커밋하면 새로 생성됩니다.","info");return}
+      throw new Error(`GitHub 응답 오류 (${res.status})`);
+    }
+    const data=await res.json();
+    sha=data.sha;
+    const text=b64ToUtf8(data.content);
+    const parsed=JSON.parse(text);
+    recs=Array.isArray(parsed)?parsed:[];
+    sort();
+    renderList();
+    setStatus(`불러왔어요 (${recs.length}건).`,"ok");
+  }catch(e){
+    setStatus("불러오기 실패: "+e.message,"err");
+  }
+}
+$("btn-load").onclick=loadFromGitHub;
+
+function sort(){recs.sort((a,b)=>a.date.localeCompare(b.date))}
+
+function renderList(){
+  const list=$("reclist");
+  $("reccount").textContent=recs.length;
+  if(!recs.length){list.innerHTML='<div class="empty">기록이 없어요.</div>';return}
+  list.innerHTML="";
+  recs.forEach((r,i)=>{
+    const div=document.createElement("div");
+    div.className="rec";
+    div.innerHTML=`<div><div class="title">${r.date} · ${r.horse}</div><div class="meta">${r.place} · ${r.weather||"—"}</div></div>
+      <div class="btns"><button class="btn" data-act="edit">✏️</button><button class="btn danger" data-act="del">🗑</button></div>`;
+    div.querySelector('[data-act="edit"]').onclick=()=>startEdit(i);
+    div.querySelector('[data-act="del"]').onclick=()=>deleteRec(i);
+    list.appendChild(div);
+  });
+}
+
+function startEdit(i){
+  const r=recs[i];
+  editingIndex=i;
+  $("fdate").value=r.date;
+  $("fhorse").value=r.horse||"";
+  $("fplace").value=r.place;
+  $("fweather").value=r.weather&&r.weather!=="—"?r.weather:"";
+  $("fgear").value=(r.gear||[]).join(", ");
+  $("flearn").value=r.learn||"";
+  $("fimprove").value=r.improve||"";
+  $("fconcern").value=r.concern||"";
+  $("fsubmit").textContent="수정 완료";
+  $("fcancel").style.display="inline-block";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function resetForm(){
+  editingIndex=null;
+  $("form").reset();
+  $("fsubmit").textContent="추가하기";
+  $("fcancel").style.display="none";
+}
+$("fcancel").onclick=resetForm;
+
+function deleteRec(i){
+  if(!confirm("이 기록을 로컬에서 삭제할까요? (커밋 전까지는 GitHub에 반영되지 않아요)"))return;
+  recs.splice(i,1);
+  renderList();
+  setStatus("삭제했어요. 아직 로컬 상태입니다 — 커밋을 눌러야 반영돼요.","info");
+}
+
+$("form").onsubmit=e=>{
+  e.preventDefault();
+  const r={
+    date:$("fdate").value,
+    horse:$("fhorse").value.trim(),
+    place:$("fplace").value,
+    weather:$("fweather").value.trim()||"—",
+    gear:$("fgear").value.split(",").map(x=>x.trim()).filter(Boolean),
+    learn:$("flearn").value.trim(),
+    improve:$("fimprove").value.trim(),
+    concern:$("fconcern").value.trim()
+  };
+  if(editingIndex!==null&&recs[editingIndex]){recs[editingIndex]=r}else{recs.push(r)}
+  sort();
+  renderList();
+  resetForm();
+  setStatus("로컬에 반영했어요. 커밋을 눌러야 GitHub에 저장됩니다.","info");
+};
+
+async function commitToGitHub(){
+  const cfg=saveCfg();
+  if(!cfg.repo||!cfg.token){setStatus("Owner/Repo와 토큰을 먼저 입력해주세요.","err");return}
+  setStatus("커밋하는 중...","info");
+  try{
+    const body={
+      message:`Update riding journey records (${recs.length}건) via admin`,
+      content:utf8ToB64(JSON.stringify(recs,null,2)),
+      branch:cfg.branch
+    };
+    if(sha)body.sha=sha;
+    const res=await fetch(apiBase(cfg),{
+      method:"PUT",
+      headers:{Authorization:`token ${cfg.token}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},
+      body:JSON.stringify(body)
+    });
+    if(!res.ok){
+      const err=await res.json().catch(()=>({}));
+      if(res.status===409){setStatus("충돌이 발생했어요 (다른 곳에서 먼저 저장됨). 다시 불러오기를 눌러주세요.","err");return}
+      throw new Error(err.message||`GitHub 응답 오류 (${res.status})`);
+    }
+    const data=await res.json();
+    sha=data.content.sha;
+    setStatus("커밋 완료! 보기 화면에서 새로고침하면 반영돼요.","ok");
+  }catch(e){
+    setStatus("커밋 실패: "+e.message,"err");
+  }
+}
+$("btn-commit").onclick=commitToGitHub;
+</script>
+</body></html>
