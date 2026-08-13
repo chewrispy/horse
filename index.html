@@ -67,7 +67,7 @@ const IDLE={"right": "data:image/webp;base64,UklGRsDQAABXRUJQVlA4WAoAAAAQAAAA9wI
 
 const $=id=>document.getElementById(id),vp=$("viewport"),world=$("world"),horse=$("horse"),card=$("card");
 let SEG=2000;
-function updateSeg(){SEG=Math.max(2000,Math.ceil(vp.clientWidth)+240)}
+function updateSeg(){SEG=Math.max(1200,Math.ceil(vp.clientWidth))}
 let recs=[];
 let current=0,offset=0,target=0,worldW=0,drag=false,sx=0,st=0,timer=null,facing="right",moveToken=0;
 
@@ -205,18 +205,14 @@ function render(){
   $("segments").innerHTML="";
   recs.forEach((r,i)=>{r.x=i*SEG+SEG/2});
 
-  let i=0;
-  while(i<recs.length){
-    let j=i;
-    while(j+1<recs.length && recs[j+1].place===recs[i].place) j++;
+  recs.forEach((r,i)=>{
     const bg=document.createElement("div");
     bg.className="segment";
     bg.style.left=(i*SEG)+"px";
-    bg.style.width=((j-i+1)*SEG)+"px";
-    bg.style.backgroundImage=`url("${BG[recs[i].place]}")`;
+    bg.style.width=SEG+"px";
+    bg.style.backgroundImage=`url("${BG[r.place]}")`;
     $("backgrounds").appendChild(bg);
-    i=j+1;
-  }
+  });
 
   recs.forEach((r,i)=>{
     const m=document.createElement("div");
