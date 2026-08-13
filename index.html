@@ -20,20 +20,19 @@ header{height:70px;flex:none;display:flex;align-items:center;justify-content:spa
 .date{background:rgba(255,250,240,.91);border:1px solid var(--line);backdrop-filter:blur(9px);border-radius:999px;padding:6px 9px;font-size:11px;white-space:nowrap}
 .dot{width:19px;height:19px;border-radius:50%;border:4px solid #fff7e7;background:#6d7d50;box-shadow:0 3px 13px rgba(38,31,22,.24);cursor:pointer}.dot.current{width:27px;height:27px;border-width:6px;background:#f4e7c7}
 .place{position:absolute;top:15px;left:50%;transform:translateX(-50%);z-index:42;background:rgba(255,250,240,.88);border:1px solid var(--line);backdrop-filter:blur(10px);border-radius:999px;padding:7px 11px;font-size:11px;font-weight:700}
-.horse{position:absolute;bottom:18px;width:360px;height:280px;transform:translateX(-50%);z-index:28;pointer-events:none;transition:none}
+.horse{position:absolute;bottom:18px;width:clamp(300px,20vw,640px);height:clamp(233px,15.5vw,497px);transform:translateX(-50%);z-index:28;pointer-events:none;transition:none}
 .horse img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;opacity:0;filter:drop-shadow(0 8px 8px rgba(30,24,17,.18))}
 .horse img.on{opacity:1}
 .horse img.idle{transform:none}
 .horse img.turn{transform:none}
 .horse img.trot{transform:none}
 .progress{position:absolute;left:18px;right:18px;bottom:14px;height:3px;background:rgba(255,250,235,.56);z-index:45}.progress div{height:100%;background:#708050;width:0}
-.card{position:absolute;left:18px;top:18px;width:min(370px,calc(100vw - 36px));z-index:46;background:rgba(255,250,240,.96);border:1px solid var(--line);backdrop-filter:blur(18px);border-radius:25px;padding:20px;box-shadow:0 20px 65px rgba(50,39,23,.2);opacity:0;transform:translateY(-7px);pointer-events:none;transition:.2s}
+.card{position:absolute;left:18px;top:18px;width:min(370px,calc(100vw - 36px));max-height:calc(100vh - 36px);overflow-y:auto;-webkit-overflow-scrolling:touch;z-index:46;background:rgba(255,250,240,.96);border:1px solid var(--line);backdrop-filter:blur(18px);border-radius:25px;padding:20px;box-shadow:0 20px 65px rgba(50,39,23,.2);opacity:0;transform:translateY(-7px);pointer-events:none;transition:.2s}
 .card.open{opacity:1;transform:none;pointer-events:auto}.head{display:flex;justify-content:space-between;gap:12px}.eyebrow{font-size:11px;color:var(--muted);font-weight:700}.card h2{font:700 28px/1.05 Georgia,serif;margin:5px 0 7px}
 .close{width:32px;height:32px;border:0;border-radius:50%;background:#ebe3d3;cursor:pointer}.chips{display:flex;flex-wrap:wrap;gap:6px;margin:14px 0}.chip{font-size:11px;background:#e9dfc8;border-radius:999px;padding:6px 9px}
 .note{padding:10px 0;border-top:1px solid #ded4bf}.note b{font-size:12px}.note p{font-size:14px;line-height:1.5;margin:4px 0 0}
 @media(max-width:700px){
 header{padding:0 12px}.brand{font-size:19px}.brand small{display:none}
-.horse{width:295px;height:230px}
 .horse img.idle{transform:none}
 .horse img.turn{transform:none}
 .horse img.trot{transform:none}
