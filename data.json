@@ -373,7 +373,15 @@
     "breed": "웜블러드",
     "place": "실내 넓은마장",
     "weather": "맑음",
-    "gear": [],
+    "gear": [
+      "Equiline XANTO 헬멧",
+      "Roeckl 장갑",
+      "MAXIMILIAN EQUESTRIAN 승마바지",
+      "Equiline 여름 승마양말",
+      "Parlanti 부츠",
+      "나이키 드라이핏 티셔츠",
+      "공용조끼"
+    ],
     "learn": "구보는 다음주 토요일에 하기로 하고 오늘은 웜블러드에 적응할 겸 자세 정비. 평보, 좌속보, 경속보 계속 반복. 감 잡기 위해서 계속 턴과 원운동 연습.",
     "improve": "",
     "concern": "오른쪽 다리에 무게 잘 안실림"
