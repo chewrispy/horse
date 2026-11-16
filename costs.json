@@ -8,6 +8,34 @@
     "memo": "1회 130,000원 × 20회, 계좌이체"
   },
   {
+    "date": "2026-05-30",
+    "category": "장비",
+    "item": "Parlanti 부츠",
+    "amount": 2300000,
+    "memo": "발리오스 새들앤스타일"
+  },
+  {
+    "date": "2026-05-30",
+    "category": "장비",
+    "item": "Equiline 여름 승마양말",
+    "amount": 80000,
+    "memo": "발리오스 새들앤스타일"
+  },
+  {
+    "date": "2026-08-01",
+    "category": "장비",
+    "item": "Equiline XANTO 헬멧",
+    "amount": 2200000,
+    "memo": "발리오스 새들앤스타일"
+  },
+  {
+    "date": "2026-08-25",
+    "category": "장비",
+    "item": "Roeckl 장갑 2개",
+    "amount": 138000,
+    "memo": "홀스몰24"
+  },
+  {
     "date": "2026-10-25",
     "category": "레슨",
     "item": "레슨 20회 회원권 (+서비스 1회)",
