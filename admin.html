@@ -37,6 +37,10 @@ a.back{font-size:12px;color:var(--muted);text-decoration:none}
 .rec .btns button{padding:5px 9px;font-size:12px}
 .hint{font-size:11px;color:var(--muted);margin-top:2px}
 .empty{font-size:13px;color:var(--muted);padding:16px;text-align:center}
+.sumgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.sumbox{background:#fff;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.sumbox span{font-size:11px;color:var(--muted);font-weight:700}
+.sumbox b{display:block;font-size:16px;margin-top:3px}
 </style>
 </head>
 <body>
@@ -104,12 +108,41 @@ a.back{font-size:12px;color:var(--muted);text-decoration:none}
     </div>
     <div class="hint">기록을 추가/수정/삭제해도 로컬에서만 바뀝니다. "GitHub에 커밋"을 눌러야 실제 저장소의 data.json이 갱신되고, 보기 화면(index.html)에 반영돼요.</div>
   </div>
+
+  <div class="card">
+    <h3>승마 비용</h3>
+    <div class="sumgrid" id="costsum"></div>
+    <form id="cform">
+      <div class="row">
+        <div class="field"><label>날짜</label><input type="date" id="cdate" required></div>
+        <div class="field"><label>분류</label>
+          <select id="ccat"><option>레슨</option><option>장비</option><option>클럽비</option><option>기타</option></select>
+        </div>
+      </div>
+      <div class="field"><label>항목</label><input id="citem" required placeholder="예: 레슨 20회 회원권 / Equiline XANTO 헬멧"></div>
+      <div class="row">
+        <div class="field"><label>금액 (원)</label><input type="number" id="camount" min="0" step="1" inputmode="numeric" required></div>
+        <div class="field" id="csesswrap"><label>받은 레슨 횟수 (서비스 포함)</label><input type="number" id="csess" min="0" step="1" inputmode="numeric"></div>
+      </div>
+      <div class="field"><label>메모</label><input id="cmemo"></div>
+      <div class="actions">
+        <button type="submit" class="btn primary" id="csubmit">추가하기</button>
+        <button type="button" class="btn" id="ccancel" style="display:none">수정 취소</button>
+      </div>
+    </form>
+    <div class="reclist" id="costlist" style="margin-top:14px"></div>
+    <div class="actions">
+      <button class="btn primary" id="btn-commit2">GitHub에 커밋</button>
+    </div>
+    <div class="hint">비용은 같은 저장소의 costs.json에 저장돼요. 커밋 전까지는 로컬에서만 바뀌고, 위의 "GitHub에 커밋"과 같은 버튼이에요. 변경된 파일만 커밋됩니다.</div>
+  </div>
 </div>
 
 <script>
 const $=id=>document.getElementById(id);
 let recs=[];
 let sha=null;
+let costs=[],costSha=null,recsDirty=false,costsDirty=false;
 let editingIndex=null;
 
 function utf8ToB64(str){return btoa(unescape(encodeURIComponent(str)))}
@@ -143,6 +176,8 @@ $("btn-clear-token").onclick=()=>{
 };
 
 function apiBase(cfg){return `https://api.github.com/repos/${cfg.repo}/contents/${cfg.path}`}
+function apiPath(cfg,name){const dir=cfg.path.includes("/")?cfg.path.replace(/[^/]*$/,""):"";return `https://api.github.com/repos/${cfg.repo}/contents/${dir}${name}`}
+function ghHeaders(cfg){return {Authorization:`token ${cfg.token}`,Accept:"application/vnd.github+json"}}
 
 async function loadFromGitHub(){
   const cfg=saveCfg();
@@ -162,8 +197,10 @@ async function loadFromGitHub(){
     const parsed=JSON.parse(text);
     recs=Array.isArray(parsed)?parsed:[];
     sort();
+    recsDirty=false;
     renderList();
-    setStatus(`불러왔어요 (${recs.length}건).`,"ok");
+    await loadCosts(cfg);
+    setStatus(`불러왔어요 (기록 ${recs.length}건, 비용 ${costs.length}건).`,"ok");
   }catch(e){
     setStatus("불러오기 실패: "+e.message,"err");
   }
@@ -175,6 +212,7 @@ function sort(){recs.sort((a,b)=>a.date.localeCompare(b.date))}
 function renderList(){
   const list=$("reclist");
   $("reccount").textContent=recs.length;
+  if(typeof renderCosts==="function")try{renderCosts()}catch(e){}
   if(!recs.length){list.innerHTML='<div class="empty">기록이 없어요.</div>';return}
   list.innerHTML="";
   recs.forEach((r,i)=>{
@@ -215,6 +253,7 @@ $("fcancel").onclick=resetForm;
 function deleteRec(i){
   if(!confirm("이 기록을 로컬에서 삭제할까요? (커밋 전까지는 GitHub에 반영되지 않아요)"))return;
   recs.splice(i,1);
+  recsDirty=true;
   renderList();
   setStatus("삭제했어요. 아직 로컬 상태입니다 — 커밋을 눌러야 반영돼요.","info");
 }
@@ -234,39 +273,109 @@ $("form").onsubmit=e=>{
   };
   if(editingIndex!==null&&recs[editingIndex]){recs[editingIndex]=r}else{recs.push(r)}
   sort();
+  recsDirty=true;
   renderList();
   resetForm();
   setStatus("로컬에 반영했어요. 커밋을 눌러야 GitHub에 저장됩니다.","info");
 };
 
+async function putFile(cfg,url,obj,fileSha,message){
+  const body={message,content:utf8ToB64(JSON.stringify(obj,null,2)+"\n"),branch:cfg.branch};
+  if(fileSha)body.sha=fileSha;
+  const res=await fetch(url,{method:"PUT",headers:{...ghHeaders(cfg),"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(!res.ok){
+    const err=await res.json().catch(()=>({}));
+    if(res.status===409||res.status===422)throw new Error("충돌이 발생했어요 (다른 곳에서 먼저 저장됨). 다시 불러오기를 눌러주세요.");
+    throw new Error(err.message||`GitHub 응답 오류 (${res.status})`);
+  }
+  return (await res.json()).content.sha;
+}
 async function commitToGitHub(){
   const cfg=saveCfg();
   if(!cfg.repo||!cfg.token){setStatus("Owner/Repo와 토큰을 먼저 입력해주세요.","err");return}
+  if(!recsDirty&&!costsDirty){setStatus("커밋할 변경 사항이 없어요.","info");return}
   setStatus("커밋하는 중...","info");
   try{
-    const body={
-      message:`Update riding journey records (${recs.length}건) via admin`,
-      content:utf8ToB64(JSON.stringify(recs,null,2)),
-      branch:cfg.branch
-    };
-    if(sha)body.sha=sha;
-    const res=await fetch(apiBase(cfg),{
-      method:"PUT",
-      headers:{Authorization:`token ${cfg.token}`,Accept:"application/vnd.github+json","Content-Type":"application/json"},
-      body:JSON.stringify(body)
-    });
-    if(!res.ok){
-      const err=await res.json().catch(()=>({}));
-      if(res.status===409){setStatus("충돌이 발생했어요 (다른 곳에서 먼저 저장됨). 다시 불러오기를 눌러주세요.","err");return}
-      throw new Error(err.message||`GitHub 응답 오류 (${res.status})`);
-    }
-    const data=await res.json();
-    sha=data.content.sha;
+    if(recsDirty){sha=await putFile(cfg,apiBase(cfg),recs,sha,`Update riding journey records (${recs.length}건) via admin`);recsDirty=false}
+    if(costsDirty){costSha=await putFile(cfg,apiPath(cfg,"costs.json"),costs,costSha,`Update riding costs (${costs.length}건) via admin`);costsDirty=false}
     setStatus("커밋 완료! 보기 화면에서 새로고침하면 반영돼요.","ok");
   }catch(e){
     setStatus("커밋 실패: "+e.message,"err");
   }
 }
 $("btn-commit").onclick=commitToGitHub;
+$("btn-commit2").onclick=commitToGitHub;
+
+/* ---------- 비용 ---------- */
+let editingCost=null;
+const won=n=>(Math.round(n)||0).toLocaleString("ko-KR")+"원";
+async function loadCosts(cfg){
+  const res=await fetch(`${apiPath(cfg,"costs.json")}?ref=${encodeURIComponent(cfg.branch)}`,{headers:ghHeaders(cfg)});
+  if(res.status===404){costs=[];costSha=null;costsDirty=false;renderCosts();return}
+  if(!res.ok)throw new Error(`costs.json 응답 오류 (${res.status})`);
+  const data=await res.json();
+  costSha=data.sha;
+  const parsed=JSON.parse(b64ToUtf8(data.content));
+  costs=Array.isArray(parsed)?parsed:[];
+  costsDirty=false;
+  renderCosts();
+}
+function renderCosts(){
+  costs.sort((a,b)=>a.date.localeCompare(b.date));
+  const by={};let total=0;
+  costs.forEach(c=>{const a=+c.amount||0;total+=a;by[c.category]=(by[c.category]||0)+a});
+  const received=costs.filter(c=>c.category==="레슨").reduce((t,c)=>t+(+c.sessions||0),0);
+  const used=recs.length;
+  const boxes=[["총 지출",won(total)]];
+  if(received){
+    boxes.push(["레슨 횟수",`받은 ${received} · 탄 ${used} · 남은 ${received-used}`]);
+    boxes.push(["레슨 1회 평균 실비용",won((by["레슨"]||0)/received)]);
+  }
+  if(Object.keys(by).length>1)Object.keys(by).forEach(k=>boxes.push([k,won(by[k])]));
+  $("costsum").innerHTML=boxes.map(b=>`<div class="sumbox"><span>${b[0]}</span><b>${b[1]}</b></div>`).join("");
+  const list=$("costlist");
+  if(!costs.length){list.innerHTML='<div class="empty">비용 기록이 없어요.</div>';return}
+  list.innerHTML="";
+  costs.forEach((c,i)=>{
+    const div=document.createElement("div");
+    div.className="rec";
+    div.innerHTML=`<div><div class="title">${c.item}</div><div class="meta">${c.date} · ${c.category} · ${won(c.amount)}${c.sessions?` · ${c.sessions}회`:""}${c.memo?` · ${c.memo}`:""}</div></div>
+      <div class="btns"><button class="btn" data-act="edit">✏️</button><button class="btn danger" data-act="del">🗑</button></div>`;
+    div.querySelector('[data-act="edit"]').onclick=()=>startEditCost(i);
+    div.querySelector('[data-act="del"]').onclick=()=>deleteCost(i);
+    list.appendChild(div);
+  });
+}
+function syncSessField(){$("csesswrap").style.display=$("ccat").value==="레슨"?"flex":"none"}
+$("ccat").onchange=syncSessField;syncSessField();
+function startEditCost(i){
+  const c=costs[i];editingCost=i;
+  $("cdate").value=c.date;$("ccat").value=c.category;$("citem").value=c.item||"";
+  $("camount").value=c.amount;$("csess").value=c.sessions||"";$("cmemo").value=c.memo||"";
+  syncSessField();
+  $("csubmit").textContent="수정 완료";$("ccancel").style.display="inline-block";
+  $("cform").scrollIntoView({behavior:"smooth",block:"center"});
+}
+function resetCostForm(){
+  editingCost=null;$("cform").reset();syncSessField();
+  $("csubmit").textContent="추가하기";$("ccancel").style.display="none";
+}
+$("ccancel").onclick=resetCostForm;
+function deleteCost(i){
+  if(!confirm("이 비용 기록을 로컬에서 삭제할까요? (커밋 전까지는 GitHub에 반영되지 않아요)"))return;
+  costs.splice(i,1);costsDirty=true;renderCosts();
+  setStatus("삭제했어요. 아직 로컬 상태입니다 — 커밋을 눌러야 반영돼요.","info");
+}
+$("cform").onsubmit=e=>{
+  e.preventDefault();
+  const c={date:$("cdate").value,category:$("ccat").value,item:$("citem").value.trim(),amount:Math.round(+$("camount").value)||0};
+  const n=Math.round(+$("csess").value);
+  if(c.category==="레슨"&&n>0)c.sessions=n;
+  const memo=$("cmemo").value.trim();if(memo)c.memo=memo;
+  if(editingCost!==null&&costs[editingCost]){costs[editingCost]=c}else{costs.push(c)}
+  costsDirty=true;renderCosts();resetCostForm();
+  setStatus("로컬에 반영했어요. 커밋을 눌러야 GitHub에 저장됩니다.","info");
+};
+renderCosts();
 </script>
 </body></html>
