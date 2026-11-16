@@ -225,7 +225,7 @@ function render(){
 function updatePlace(){if(!recs.length)return;let i=Math.max(0,Math.min(recs.length-1,Math.floor((offset+vp.clientWidth/2)/SEG)));$("place").textContent=recs[i].place}
 function loop(){offset+=(target-offset)*.16;world.style.transform=`translateX(${-offset}px)`;$("bar").style.width=(maxO()?offset/maxO()*100:0)+"%";updatePlace();requestAnimationFrame(loop)}
 let cardIndex=null;
-function openCard(i){cardIndex=i;const r=recs[i];$("cno").textContent=`Ride #${i+1} · ${r.place}`;$("cdate").textContent=r.date.replaceAll("-",".");$("cmeta").textContent=`🐴 ${r.horse} · ${r.weather||"—"}`;$("chips").innerHTML=(r.gear||[]).map(g=>`<span class="chip">${g}</span>`).join("");$("learn").textContent=r.learn||"—";$("improve").textContent=r.improve||"—";$("concern").textContent=r.concern||"—";card.classList.add("open")}
+function openCard(i){cardIndex=i;const r=recs[i];$("cno").textContent=`Ride #${i+1} · ${r.place}`;$("cdate").textContent=r.date.replaceAll("-",".");$("cmeta").textContent=`🐴 ${r.horse}${r.breed?" ("+r.breed+")":""} · ${r.weather||"—"}`;$("chips").innerHTML=(r.gear||[]).map(g=>`<span class="chip">${g}</span>`).join("");$("learn").textContent=r.learn||"—";$("improve").textContent=r.improve||"—";$("concern").textContent=r.concern||"—";card.classList.add("open")}
 
 function spinInPlace(token){
   clearInterval(timer); timer=null;

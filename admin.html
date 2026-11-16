@@ -72,6 +72,11 @@ a.back{font-size:12px;color:var(--muted);text-decoration:none}
         <div class="field"><label>날짜</label><input type="date" id="fdate" required></div>
         <div class="field"><label>말 이름</label><input id="fhorse" required></div>
       </div>
+      <div class="field"><label>품종</label>
+        <select id="fbreed">
+          <option value="">선택 안 함</option><option>더러브렛</option><option>웜블러드</option>
+        </select>
+      </div>
       <div class="row">
         <div class="field"><label>레슨 장소</label>
           <select id="fplace">
@@ -175,7 +180,7 @@ function renderList(){
   recs.forEach((r,i)=>{
     const div=document.createElement("div");
     div.className="rec";
-    div.innerHTML=`<div><div class="title">${r.date} · ${r.horse}</div><div class="meta">${r.place} · ${r.weather||"—"}</div></div>
+    div.innerHTML=`<div><div class="title">${r.date} · ${r.horse}</div><div class="meta">${r.breed?r.breed+" · ":""}${r.place} · ${r.weather||"—"}</div></div>
       <div class="btns"><button class="btn" data-act="edit">✏️</button><button class="btn danger" data-act="del">🗑</button></div>`;
     div.querySelector('[data-act="edit"]').onclick=()=>startEdit(i);
     div.querySelector('[data-act="del"]').onclick=()=>deleteRec(i);
@@ -188,6 +193,7 @@ function startEdit(i){
   editingIndex=i;
   $("fdate").value=r.date;
   $("fhorse").value=r.horse||"";
+  $("fbreed").value=r.breed||"";
   $("fplace").value=r.place;
   $("fweather").value=r.weather&&r.weather!=="—"?r.weather:"";
   $("fgear").value=(r.gear||[]).join(", ");
@@ -218,6 +224,7 @@ $("form").onsubmit=e=>{
   const r={
     date:$("fdate").value,
     horse:$("fhorse").value.trim(),
+    breed:$("fbreed").value,
     place:$("fplace").value,
     weather:$("fweather").value.trim()||"—",
     gear:$("fgear").value.split(",").map(x=>x.trim()).filter(Boolean),
